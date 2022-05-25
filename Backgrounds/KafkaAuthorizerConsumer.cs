@@ -72,7 +72,7 @@ namespace EscortBookAuthorizerConsumer.Backgrounds
 
                     if (user is null) continue;
 
-                    user.Block = true;
+                    user.Block = kafkaBlockUserEvent.Status == "Locked";
                     var tasks = new Task[]
                     {
                         _userRepository.UpdateAsync(u => u.Id == user.Id, user),
