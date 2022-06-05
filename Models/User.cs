@@ -29,5 +29,11 @@ namespace EscortBookAuthorizerConsumer.Models
 
         [BsonElement("block")]
         public bool Block { get; set; }
+
+        [BsonElement("deactivated")]
+        public bool Deactivated { get; set; }
+
+        [BsonElement("delete")]
+        public bool Delete { get; set; }
     }
 }
