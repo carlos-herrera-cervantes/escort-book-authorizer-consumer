@@ -56,7 +56,7 @@ namespace EscortBookAuthorizerConsumer.Backgrounds
             };
 
             using var builder = new ConsumerBuilder<Ignore, string>(config).Build();
-            builder.Subscribe(_configuration["Kafka:Topic"]);
+            builder.Subscribe(_configuration["Kafka:Topics:BlockDeleteUser"]);
 
             var cancelToken = new CancellationTokenSource();
 
@@ -73,6 +73,9 @@ namespace EscortBookAuthorizerConsumer.Backgrounds
                     if (user is null) continue;
 
                     user.Block = kafkaBlockUserEvent.Status == "Locked";
+                    user.Deactivated = kafkaBlockUserEvent.Status == "Deactivated";
+                    user.Delete = kafkaBlockUserEvent.Status == "Deleted";
+
                     var tasks = new Task[]
                     {
                         _userRepository.UpdateAsync(u => u.Id == user.Id, user),
