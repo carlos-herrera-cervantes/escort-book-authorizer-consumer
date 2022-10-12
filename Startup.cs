@@ -6,22 +6,21 @@ using Microsoft.Extensions.Configuration;
 using EscortBookAuthorizerConsumer.Backgrounds;
 using EscortBookAuthorizerConsumer.Repositories;
 
-namespace EscortBookAuthorizerConsumer
+namespace EscortBookAuthorizerConsumer;
+
+public class Startup
 {
-    public class Startup
+    private IConfiguration Configuration { get; set; }
+
+    public Startup(IConfiguration configuration) => Configuration = configuration;
+
+    public void ConfigureServices(IServiceCollection services)
     {
-        private IConfiguration Configuration { get; set; }
-
-        public Startup(IConfiguration configuration) => Configuration = configuration;
-
-        public void ConfigureServices(IServiceCollection services)
-        {
-            services.AddMongoDBClient(Configuration);
-            services.AddSingleton<IAccessTokenRepository, AccessTokenRepository>();
-            services.AddSingleton<IUserRepository, UserRepository>();
-            services.AddHostedService<KafkaAuthorizerConsumer>();
-        }
-
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {}
+        services.AddMongoDBClient();
+        services.AddSingleton<IAccessTokenRepository, AccessTokenRepository>();
+        services.AddSingleton<IUserRepository, UserRepository>();
+        services.AddHostedService<KafkaAuthorizerConsumer>();
     }
+
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env) { }
 }
