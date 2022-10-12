@@ -3,10 +3,9 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using EscortBookAuthorizerConsumer.Models;
 
-namespace EscortBookAuthorizerConsumer.Repositories
+namespace EscortBookAuthorizerConsumer.Repositories;
+
+public interface IAccessTokenRepository
 {
-    public interface IAccessTokenRepository
-    {
-        Task DeleteAsync(Expression<Func<AccessToken, bool>> expression);
-    }
+    Task DeleteAsync(Expression<Func<AccessToken, bool>> expression);
 }
