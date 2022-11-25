@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace EscortBookAuthorizerConsumer.Types;
+namespace EscortBookAuthorizer.Consumer.Types;
 
 public class KafkaBlockUserEvent
 {
