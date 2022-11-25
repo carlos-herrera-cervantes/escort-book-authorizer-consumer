@@ -2,7 +2,7 @@
 using MongoDB.Driver;
 using System;
 
-namespace EscortBookAuthorizerConsumer.Extensions;
+namespace EscortBookAuthorizer.Consumer.Extensions;
 
 public static class MongoDBExtensions
 {
@@ -11,7 +11,7 @@ public static class MongoDBExtensions
         var connectionString = Environment.GetEnvironmentVariable("MONGO_DB_HOST");
         var client = new MongoClient(connectionString);
 
-        services.AddSingleton<MongoClient>(c => client);
+        services.AddSingleton<IMongoClient>(c => client);
         return services;
     }
 }

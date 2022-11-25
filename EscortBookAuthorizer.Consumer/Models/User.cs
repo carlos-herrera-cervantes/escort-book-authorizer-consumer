@@ -2,7 +2,7 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace EscortBookAuthorizerConsumer.Models;
+namespace EscortBookAuthorizer.Consumer.Models;
 
 public class User : Base
 {

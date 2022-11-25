@@ -5,11 +5,13 @@ using Confluent.Kafka;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using EscortBookAuthorizerConsumer.Types;
-using EscortBookAuthorizerConsumer.Repositories;
-using EscortBookAuthorizerConsumer.Constants;
+using MongoDB.Driver;
+using EscortBookAuthorizer.Consumer.Types;
+using EscortBookAuthorizer.Consumer.Repositories;
+using EscortBookAuthorizer.Consumer.Constants;
+using EscortBookAuthorizer.Consumer.Models;
 
-namespace EscortBookAuthorizerConsumer.Backgrounds;
+namespace EscortBookAuthorizer.Consumer.Backgrounds;
 
 public class KafkaAuthorizerConsumer : BackgroundService
 {
@@ -58,33 +60,37 @@ public class KafkaAuthorizerConsumer : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            try
+            await UpdateAccountStatus(builder, cancelToken);
+        }
+    }
+
+    private async Task UpdateAccountStatus(IConsumer<Ignore, string> builder, CancellationTokenSource cancelToken)
+    {
+        try
+        {
+            var consumer = builder.Consume(cancelToken.Token);
+            var kafkaBlockUserEvent = JsonConvert.DeserializeObject<KafkaBlockUserEvent>(consumer.Message.Value);
+
+            var user = await _userRepository.GetAsync(Builders<User>.Filter.Eq(u => u.Id, kafkaBlockUserEvent.UserId));
+
+            if (user is null) return;
+
+            user.Block = kafkaBlockUserEvent.Status == "Locked";
+            user.Deactivated = kafkaBlockUserEvent.Status == "Deactivated";
+            user.Delete = kafkaBlockUserEvent.Status == "Deleted";
+
+            var tasks = new Task[]
             {
-                var consumer = builder.Consume(cancelToken.Token);
-                var kafkaBlockUserEvent = JsonConvert
-                    .DeserializeObject<KafkaBlockUserEvent>(consumer.Message.Value);
+                _userRepository.UpdateAsync(Builders<User>.Filter.Eq(u => u.Id, user.Id), user),
+                _accessTokenRepository.DeleteManyAsync(Builders<AccessToken>.Filter.Eq(t => t.User, user.Email))
+            };
 
-                var user = await _userRepository.GetByIdAsync(kafkaBlockUserEvent.UserId);
-
-                if (user is null) continue;
-
-                user.Block = kafkaBlockUserEvent.Status == "Locked";
-                user.Deactivated = kafkaBlockUserEvent.Status == "Deactivated";
-                user.Delete = kafkaBlockUserEvent.Status == "Deleted";
-
-                var tasks = new Task[]
-                {
-                    _userRepository.UpdateAsync(u => u.Id == user.Id, user),
-                    _accessTokenRepository.DeleteAsync(t => t.User == user.Email)
-                };
-
-                await Task.WhenAll(tasks);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError($"AN ERROR HAS OCCUR: {e.Message}");
-                builder.Close();
-            }
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"AN ERROR HAS OCCUR: {e.Message}");
+            builder.Close();
         }
     }
 
