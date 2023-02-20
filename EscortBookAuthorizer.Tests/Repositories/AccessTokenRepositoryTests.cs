@@ -1,9 +1,9 @@
-﻿using System;
-using Xunit;
-using MongoDB.Driver;
+﻿using Xunit;
 using System.Threading.Tasks;
+using MongoDB.Driver;
 using EscortBookAuthorizer.Consumer.Repositories;
 using EscortBookAuthorizer.Consumer.Models;
+using EscortBookAuthorizer.Consumer.Constants;
 
 namespace EscortBookAuthorizer.Tests.Repositories;
 
@@ -19,10 +19,7 @@ public class AccessTokenRepositoryTests
     #region snippet_Constructors
 
     public AccessTokenRepositoryTests()
-    {
-        var connectionString = Environment.GetEnvironmentVariable("MONGO_DB_HOST");
-        _mongoClient = new MongoClient(connectionString);
-    }
+        => _mongoClient = new MongoDB.Driver.MongoClient(MongoClientConfig.ConnectionString);
 
     #endregion
 

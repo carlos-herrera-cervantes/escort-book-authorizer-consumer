@@ -1,7 +1,7 @@
-﻿using System;
-using System.Threading.Tasks;
-using EscortBookAuthorizer.Consumer.Models;
+﻿using System.Threading.Tasks;
 using MongoDB.Driver;
+using EscortBookAuthorizer.Consumer.Models;
+using EscortBookAuthorizer.Consumer.Constants;
 
 namespace EscortBookAuthorizer.Consumer.Repositories;
 
@@ -18,7 +18,7 @@ public class AccessTokenRepository : IAccessTokenRepository
     public AccessTokenRepository(IMongoClient client)
     {
         _collection = client
-            .GetDatabase(Environment.GetEnvironmentVariable("MONGODB_DEFAULT_DB"))
+            .GetDatabase(MongoDatabase.Authorizer)
             .GetCollection<AccessToken>("accesstokens");
     }
 
