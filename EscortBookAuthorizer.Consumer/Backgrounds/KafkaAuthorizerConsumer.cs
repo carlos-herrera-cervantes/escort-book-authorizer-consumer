@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Confluent.Kafka;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using MongoDB.Driver;
+using Confluent.Kafka;
 using EscortBookAuthorizer.Consumer.Types;
 using EscortBookAuthorizer.Consumer.Repositories;
 using EscortBookAuthorizer.Consumer.Constants;
@@ -23,20 +23,23 @@ public class KafkaAuthorizerConsumer : BackgroundService
 
     private readonly IUserRepository _userRepository;
 
+    private readonly IConsumer<Ignore, string> _consumer;
+
     #endregion
 
     #region snippet_Constructors
 
-    public KafkaAuthorizerConsumer
-    (
+    public KafkaAuthorizerConsumer(
         ILogger<KafkaAuthorizerConsumer> logger,
         IAccessTokenRepository accessTokenRepository,
-        IUserRepository userRepository
+        IUserRepository userRepository,
+        IConsumer<Ignore, string> consumer
     )
     {
         _logger = logger;
         _accessTokenRepository = accessTokenRepository;
         _userRepository = userRepository;
+        _consumer = consumer;
     }
 
     #endregion
@@ -45,30 +48,21 @@ public class KafkaAuthorizerConsumer : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var config = new ConsumerConfig
-        {
-            GroupId = Environment.GetEnvironmentVariable("KAFKA_GROUP_ID"),
-            BootstrapServers = Environment.GetEnvironmentVariable("KAFKA_SERVERS"),
-            AutoOffsetReset = AutoOffsetReset.Earliest,
-            EnableAutoCommit = true
-        };
-
-        using var builder = new ConsumerBuilder<Ignore, string>(config).Build();
-        builder.Subscribe(KafkaTopic.BlockDeleteUser);
+        _consumer.Subscribe(KafkaTopic.BlockDeleteUser);
 
         var cancelToken = new CancellationTokenSource();
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            await UpdateAccountStatus(builder, cancelToken);
+            await UpdateAccountStatus(cancelToken);
         }
     }
 
-    private async Task UpdateAccountStatus(IConsumer<Ignore, string> builder, CancellationTokenSource cancelToken)
+    private async Task UpdateAccountStatus(CancellationTokenSource cancelToken)
     {
         try
         {
-            var consumer = builder.Consume(cancelToken.Token);
+            var consumer = _consumer.Consume(cancelToken.Token);
             var kafkaBlockUserEvent = JsonConvert.DeserializeObject<KafkaBlockUserEvent>(consumer.Message.Value);
 
             var user = await _userRepository.GetAsync(Builders<User>.Filter.Eq(u => u.Id, kafkaBlockUserEvent.UserId));
@@ -90,7 +84,7 @@ public class KafkaAuthorizerConsumer : BackgroundService
         catch (Exception e)
         {
             _logger.LogError($"AN ERROR HAS OCCUR: {e.Message}");
-            builder.Close();
+            _consumer.Close();
         }
     }
 
