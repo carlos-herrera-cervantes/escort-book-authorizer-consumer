@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using MongoDB.Driver;
 using Confluent.Kafka;
@@ -33,13 +34,13 @@ public class KafkaAuthorizerConsumer : BackgroundService
         ILogger<KafkaAuthorizerConsumer> logger,
         IAccessTokenRepository accessTokenRepository,
         IUserRepository userRepository,
-        IConsumer<Ignore, string> consumer
+        IServiceScopeFactory factory
     )
     {
         _logger = logger;
         _accessTokenRepository = accessTokenRepository;
         _userRepository = userRepository;
-        _consumer = consumer;
+        _consumer = factory.CreateScope().ServiceProvider.GetRequiredService<IConsumer<Ignore, string>>();
     }
 
     #endregion
